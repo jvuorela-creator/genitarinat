@@ -33,9 +33,7 @@ if st.button("Luo tarina"):
                 openai_key = st.secrets["OPENAI_API_KEY"]
 
                 # ==========================================
-                # VAIHE A: Haetaan tiedot Genistä
-                # ==========================================
-              # ==========================================
+             # ==========================================
                 # VAIHE A: Haetaan tiedot Genistä
                 # ==========================================
                 
@@ -43,7 +41,10 @@ if st.button("Luo tarina"):
                 puhdas_url = geni_url.split("?")[0]
                 
                 # 2. Poimitaan varsinainen ID
-                geni_id = puhdas_url.split("/")[-1]
+                raaka_id = puhdas_url.split("/")[-1]
+                
+                # 3. KORJAUS: Geni API vaatii 'profile-' etuliitteen!
+                geni_id = f"profile-{raaka_id}" if not raaka_id.startswith("profile-") else raaka_id
                 
                 headers = {"Authorization": f"Bearer {geni_token}", "Accept": "application/json"}
                 api_url = f"https://www.geni.com/api/{geni_id}"
@@ -51,11 +52,29 @@ if st.button("Luo tarina"):
                 response = requests.get(api_url, headers=headers)
                 
                 if response.status_code != 200:
-                    # Näytetään tarkempi virheviesti, joka auttaa vianetsinnässä
                     st.error(f"Geni-tietojen haku epäonnistui (Virhekoodi: {response.status_code}).")
                     st.write(f"Yritettiin hakea tunnuksella: {geni_id}")
                     st.write("Varmista, että profiili on julkinen ja API-avain on voimassa.")
                     st.stop()
+                    
+                profile = response.json()
+                
+                # Poimitaan faktat
+                nimi = profile.get("name", "Tuntematon")
+                
+                birth_data = profile.get("birth", {})
+                birth_date = birth_data.get("date", {}).get("formatted_date", "?")
+                birth_place = birth_data.get("location", {}).get("place_name", "")
+                syntyma = f"{birth_date} {birth_place}".strip()
+                
+                death_data = profile.get("death", {})
+                death_date = death_data.get("date", {}).get("formatted_date", "?")
+                death_place = death_data.get("location", {}).get("place_name", "")
+                kuolema = f"{death_date} {death_place}".strip()
+                
+                ammatti = profile.get("occupation", "Tuntematon asema")
+                asuinpaikat = profile.get("location", {}).get("place_name", "?")
+                perhe = "Puoliso ja lapset (jos kirjattu Geniin)."
 
                 # ==========================================
                 # VAIHE B: Rakennetaan kehotus (Prompt)
