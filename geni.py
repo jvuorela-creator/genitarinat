@@ -75,13 +75,24 @@ if st.button("Luo tarina"):
                 ammatti = profile.get("occupation", "Tuntematon asema")
                 asuinpaikat = profile.get("location", {}).get("place_name", "?")
                 perhe = "Puoliso ja lapset (jos kirjattu Geniin)."
-
+# ==========================================
+                # NÄYTETÄÄN HAETUT FAKTAT RUUDULLA
                 # ==========================================
+                st.info("💡 **Tekoälylle lähetettävät faktat:**")
+                st.write(f"**Nimi:** {nimi}")
+                st.write(f"**Elinaika:** {syntyma} - {kuolema}")
+                st.write(f"**Ammatti:** {ammatti}")
+                st.write(f"**Paikkakunnat:** {asuinpaikat}")
+                st.markdown("---")
+                # ==========================================
+                # VAIHE B: Rakennetaan kehotus (Prompt)
+                # ==========================================
+               # ==========================================
                 # VAIHE B: Rakennetaan kehotus (Prompt)
                 # ==========================================
                 prompt = f"""
 ROOLI:
-Olet asiantunteva Suomen historian tutkija, paikallishistorian asiantuntija ja kokenut sukututkija. Tehtäväsi on muuttaa kuivat sukututkimusfaktat eläväksi, kunnioittavaksi ja historiallisesti tarkaksi tarinaksi, joka auttaa lukijaa ymmärtämään esivanhempansa arkea.
+Olet asiantunteva Suomen historian tutkija ja kokenut sukututkija. Tehtäväsi on muuttaa kuivat sukututkimusfaktat eläväksi tarinaksi.
 
 LÄHTÖTIEDOT (Syötteet):
 Nimi: {nimi}
@@ -91,11 +102,11 @@ Tärkeimmät asuinpaikat: {asuinpaikat}
 Perhe: {perhe}
 
 OHJEET TARINAN KIRJOITTAMISEEN:
-1. Paikallinen ja alueellinen konteksti (TÄRKEIN): Analysoi annetut asuinpaikat ja sijoita tarina oikeaan Suomen historialliseen maakuntaan. Kuvaile kyseisen alueen tyypillistä elinkeinoa, luontoa ja kulttuuria.
-2. Aikakauden suuret linjat: Suhteuta henkilön elinvuodet Suomen historian suuriin käännekohtiin.
-3. Ammatti ja arjen kuvaus: Mitä kyseisen ammatin/aseman edustaja teki työkseen kyseisellä vuosisadalla?
-4. Tyyli ja sävy: Kirjoita mukaansatempaavaa, rikasta ja elävää suomen kieltä. Älä keksi henkilölle tekoja, joita ei ole syötteessä.
-5. Rakenne: Jaa tarina 3-4 selkeään kappaleeseen (Johdanto, Ammatti, Historia, Kuolema ja perintö).
+0. PÄÄHENKILÖ (KRIITTINEN SÄÄNTÖ): Tarinan on ehdottomasti keskityttävä henkilöön nimeltä {nimi}. Sido hänen nimensä, elämänvaiheensa ja ammattinsa kiinteästi osaksi jokaista kappaletta. Älä kirjoita yleistä historian oppituntia, vaan kuvaa nimenomaan {nimi}-nimisen ihmisen mahdollista arkea tässä historiallisessa viitekehyksessä.
+1. Paikallinen konteksti: Analysoi annetut asuinpaikat ja sijoita tarina oikeaan Suomen historialliseen maakuntaan. Kuvaile, miten alueen luonto ja kulttuuri vaikuttivat suoraan hänen ({nimi}) elämäänsä.
+2. Ammatti ja arki: Jos ammatti on tiedossa, kerro konkreettisesti, mitä hän teki työkseen. Jos ammattia ei ole, kuvaa tyypillistä tuon ajan maalais- tai kaupunkilaisarkea hänen asuinseudullaan.
+3. Aikakausi: Suhteuta hänen elinvuotensa Suomen historian suuriin käännekohtiin (esim. nälkävuodet, sodat) ja pohdi, miten ne ehkä koskettivat hänen perhettään.
+4. Tyyli: Kirjoita rikasta, empaattista ja elävää suomea. Älä keksi hänelle valheellisia tekoja, vaan käytä ilmaisuja kuten "{nimi} on saattanut nähdä..." tai "Hänen päiviinsä kuului todennäköisesti...".
 """
 
                 # ==========================================
