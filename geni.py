@@ -36,14 +36,12 @@ if st.button("Luo tarina"):
              # ==========================================
                 # VAIHE A: Haetaan tiedot Genistä
                 # ==========================================
+             # ==========================================
+                # VAIHE A: Haetaan tiedot Genistä
+                # ==========================================
                 
-                # 1. SIIVOTAAN URL: Poistetaan kaikki kysymysmerkin jälkeinen "roska"
                 puhdas_url = geni_url.split("?")[0]
-                
-                # 2. Poimitaan varsinainen ID
                 raaka_id = puhdas_url.split("/")[-1]
-                
-                # 3. KORJAUS: Geni API vaatii 'profile-' etuliitteen!
                 geni_id = f"profile-{raaka_id}" if not raaka_id.startswith("profile-") else raaka_id
                 
                 headers = {"Authorization": f"Bearer {geni_token}", "Accept": "application/json"}
@@ -53,28 +51,19 @@ if st.button("Luo tarina"):
                 
                 if response.status_code != 200:
                     st.error(f"Geni-tietojen haku epäonnistui (Virhekoodi: {response.status_code}).")
-                    st.write(f"Yritettiin hakea tunnuksella: {geni_id}")
-                    st.write("Varmista, että profiili on julkinen ja API-avain on voimassa.")
                     st.stop()
                     
                 profile = response.json()
                 
-                # Poimitaan faktat
-                nimi = profile.get("name", "Tuntematon")
+                # ==========================================
+                # DEBUGGAUS: NÄYTETÄÄN RAAKADATA RUUDULLA
+                # ==========================================
+                st.warning("🔍 TUTKITAAN GENIN ANTAMAA RAAKADATAA:")
+                st.write("Tässä on täsmälleen se tieto, jonka Geni suostui lähettämään tästä linkistä:")
+                st.json(profile) # Tämä tulostaa koko tietorakenteen nätisti
                 
-                birth_data = profile.get("birth", {})
-                birth_date = birth_data.get("date", {}).get("formatted_date", "?")
-                birth_place = birth_data.get("location", {}).get("place_name", "")
-                syntyma = f"{birth_date} {birth_place}".strip()
-                
-                death_data = profile.get("death", {})
-                death_date = death_data.get("date", {}).get("formatted_date", "?")
-                death_place = death_data.get("location", {}).get("place_name", "")
-                kuolema = f"{death_date} {death_place}".strip()
-                
-                ammatti = profile.get("occupation", "Tuntematon asema")
-                asuinpaikat = profile.get("location", {}).get("place_name", "?")
-                perhe = "Puoliso ja lapset (jos kirjattu Geniin)."
+                st.info("Pysäytetään ohjelma tähän, jotta tekoälyä ei kutsuta turhaan vianetsinnän aikana.")
+                st.stop() # Ohjelma pysähtyy tähän
 # ==========================================
                 # NÄYTETÄÄN HAETUT FAKTAT RUUDULLA
                 # ==========================================
