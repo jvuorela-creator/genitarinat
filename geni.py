@@ -129,6 +129,11 @@ OHJEET TARINAN KIRJOITTAMISEEN:
 2. Ammatti ja arki: Jos ammatti on tiedossa, kerro konkreettisesti, mitä hän teki työkseen. Jos ammattia ei ole, kuvaa tyypillistä tuon ajan maalais- tai kaupunkilaisarkea hänen asuinseudullaan.
 3. Aikakausi: Suhteuta hänen elinvuotensa Suomen historian suuriin käännekohtiin (esim. nälkävuodet, sodat) ja pohdi, miten ne ehkä koskettivat hänen perhettään.
 4. Tyyli: Kirjoita rikasta, empaattista ja elävää suomea. Älä keksi hänelle valheellisia tekoja, vaan käytä ilmaisuja kuten "{nimi} on saattanut nähdä..." tai "Hänen päiviinsä kuului todennäköisesti...".
+5. Muista: Suomi oli osa Ruotsia vuoteen 1809 ja autonominen osa Venäjää vuosina 1809-1917.
+6. Konteksti: Yritä päätellä henkilön etunimestä kyseisen nimen taustaa ja kirjoita siitä lyhyesti.
+7. Käytä hyödyksi Wikipediaa, jotta voit sitoa henkilön tarinan hänen elinaikaansa
+8. Älä koskaan oleta henkilön varallisuutta tai luonteenpiirteitä. Jos ammattia ei ole mainittu, kuvaa ainoastaan alueen yleisiä elinkeinoja.
+
 """
 
                 # ==========================================
@@ -145,7 +150,7 @@ OHJEET TARINAN KIRJOITTAMISEEN:
                         {"role": "system", "content": "Olet suomalainen historioitsija."},
                         {"role": "user", "content": prompt}
                     ],
-                    "temperature": 0.7
+                    "temperature": 0.4
                 }
                 
                 ai_response = requests.post(openai_url, headers=openai_headers, json=openai_payload)
