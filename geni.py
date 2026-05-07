@@ -3,6 +3,41 @@ import requests
 
 # 1. Sivun asetukset ja SUKU-lehden yläpalkki
 st.set_page_config(page_title="Esivanhemman Tarina - SUKU", page_icon="📜")
+
+import base64
+
+# Funktio taustakuvan lataamiseen
+def aseta_taustakuva(kuvatiedosto):
+    try:
+        with open(kuvatiedosto, "rb") as kuva:
+            koodattu_kuva = base64.b64encode(kuva.read()).decode()
+        
+        # CSS-tyylit, jotka pakottavat kuvan koko ruudun taustalle
+        css_koodi = f"""
+        <style>
+        .stApp {{
+            background-image: url("data:image/jpg;base64,{koodattu_kuva}");
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }}
+        
+        /* Tehdään sovelluksen sisällön taustasta hieman läpinäkyvä, jotta teksti erottuu */
+        .block-container {{
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 2rem;
+            border-radius: 10px;
+            margin-top: 2rem;
+        }}
+        </style>
+        """
+        st.markdown(css_koodi, unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.warning("Taustakuvaa 'taustaa.jpg' ei löytynyt. Varmista, että se on samassa kansiossa koodin kanssa.")
+
+# Kutsutaan funktiota
+aseta_taustakuva("taustaa.jpg")
+
 st.markdown(
     """
     <div style='text-align: center; background-color: #2c3e50; padding: 15px; margin-bottom: 20px; border-radius: 5px;'>
