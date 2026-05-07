@@ -36,7 +36,7 @@ def aseta_taustakuva(kuvatiedosto):
         st.warning("Taustakuvaa 'taustaa.jpg' ei löytynyt. Varmista, että se on samassa kansiossa koodin kanssa.")
 
 # Kutsutaan funktiota
-aseta_taustakuva("taustaa.jpg")
+aseta_taustakuva("taustaa.png")
 
 st.markdown(
     """
