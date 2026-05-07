@@ -34,15 +34,20 @@ if st.button("Luo tarina"):
 
                 # ==========================================
              # ==========================================
-                # VAIHE A: Haetaan tiedot Genistä
-                # ==========================================
-             # ==========================================
+               # ==========================================
                 # VAIHE A: Haetaan tiedot Genistä
                 # ==========================================
                 
                 puhdas_url = geni_url.split("?")[0]
                 raaka_id = puhdas_url.split("/")[-1]
-                geni_id = f"profile-{raaka_id}" if not raaka_id.startswith("profile-") else raaka_id
+                
+                # KORJAUS: Genin pitkät GUID-tunnukset vaativat eteen 'profile-g'
+                if raaka_id.isdigit() and len(raaka_id) > 10:
+                    geni_id = f"profile-g{raaka_id}"
+                elif not raaka_id.startswith("profile-"):
+                    geni_id = f"profile-{raaka_id}"
+                else:
+                    geni_id = raaka_id
                 
                 headers = {"Authorization": f"Bearer {geni_token}", "Accept": "application/json"}
                 api_url = f"https://www.geni.com/api/{geni_id}"
@@ -55,15 +60,43 @@ if st.button("Luo tarina"):
                     
                 profile = response.json()
                 
-                # ==========================================
-                # DEBUGGAUS: NÄYTETÄÄN RAAKADATA RUUDULLA
-                # ==========================================
-                st.warning("🔍 TUTKITAAN GENIN ANTAMAA RAAKADATAA:")
-                st.write("Tässä on täsmälleen se tieto, jonka Geni suostui lähettämään tästä linkistä:")
-                st.json(profile) # Tämä tulostaa koko tietorakenteen nätisti
+                # TARKISTUS: Jos Geni palautti tyhjää ("results": [])
+                if "results" in profile and len(profile["results"]) == 0:
+                    st.error("Geni palautti tyhjän tiedoston.")
+                    st.warning("Tämä tarkoittaa yleensä sitä, että profiili on Genissä yksityinen (Private), eikä ohjelmointirajapinnalla ole siihen lukuoikeutta. Kokeile hakea jotain varmasti julkista (Public) esivanhempaa 1800-luvulta!")
+                    st.stop()
                 
-                st.info("Pysäytetään ohjelma tähän, jotta tekoälyä ei kutsuta turhaan vianetsinnän aikana.")
-                st.stop() # Ohjelma pysähtyy tähän
+                # TARKISTUS: Onko kyseessä varmasti yksityinen profiili?
+                if profile.get("is_private") == True and "name" not in profile:
+                    st.error("Tämä on yksityinen profiili (Private). Geni ei salli yksityisten tietojen lukemista ulkoisiin sovelluksiin.")
+                    st.stop()
+                
+                # Poimitaan faktat
+                nimi = profile.get("name", "Tuntematon")
+                
+                birth_data = profile.get("birth", {})
+                birth_date = birth_data.get("date", {}).get("formatted_date", "?")
+                birth_place = birth_data.get("location", {}).get("place_name", "")
+                syntyma = f"{birth_date} {birth_place}".strip()
+                
+                death_data = profile.get("death", {})
+                death_date = death_data.get("date", {}).get("formatted_date", "?")
+                death_place = death_data.get("location", {}).get("place_name", "")
+                kuolema = f"{death_date} {death_place}".strip()
+                
+                ammatti = profile.get("occupation", "Tuntematon asema")
+                asuinpaikat = profile.get("location", {}).get("place_name", "?")
+                perhe = "Puoliso ja lapset (jos kirjattu Geniin)."
+
+                # ==========================================
+                # NÄYTETÄÄN HAETUT FAKTAT RUUDULLA
+                # ==========================================
+                st.info("💡 **Geni-rajapinnan onnistuneesti löytämät faktat:**")
+                st.write(f"**Nimi:** {nimi}")
+                st.write(f"**Elinaika:** {syntyma} - {kuolema}")
+                st.write(f"**Ammatti:** {ammatti}")
+                st.write(f"**Paikkakunnat:** {asuinpaikat}")
+                st.markdown("---")
 # ==========================================
                 # NÄYTETÄÄN HAETUT FAKTAT RUUDULLA
                 # ==========================================
