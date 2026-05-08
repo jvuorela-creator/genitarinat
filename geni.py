@@ -1,207 +1,92 @@
 import streamlit as st
 import requests
 
-# 1. Sivun asetukset ja SUKU-lehden yläpalkki
-st.set_page_config(page_title="Esivanhemman Tarina - SUKU", page_icon="📜")
+# 1. Sivun asetukset
+st.set_page_config(page_title="Historiallinen Sukutarina", page_icon="🕰️", layout="centered")
 
-import base64
+st.title("🕰️ Historiallinen Sukutarina & Aikajana")
+st.write("Syötä esivanhemman perustiedot alle. Tekoäly kirjoittaa tarinan ja rakentaa visuaalisen aikajanan, joka sitoo elämänvaiheet Suomen historian suuriin käännekohtiin.")
 
-# Funktio taustakuvan lataamiseen
-def aseta_taustakuva(kuvatiedosto):
-    try:
-        with open(kuvatiedosto, "rb") as kuva:
-            koodattu_kuva = base64.b64encode(kuva.read()).decode()
+# 2. Käyttöliittymä ja lomake
+with st.form("tiedot_lomake"):
+    nimi = st.text_input("Henkilön nimi", placeholder="Esim. Matti Meikäläinen")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        syntymavuosi = st.text_input("Syntymävuosi (tai arvio)", placeholder="esim. 1835")
+        syntymapaikka = st.text_input("Synnyinpaikkakunta", placeholder="esim. Nurmijärvi")
+    with col2:
+        kuolinvuosi = st.text_input("Kuolinvuosi (tai arvio)", placeholder="esim. 1905")
+        kuolinpaikka = st.text_input("Kuolinpaikkakunta", placeholder="esim. Helsinki")
         
-        # CSS-tyylit, jotka pakottavat kuvan koko ruudun taustalle
-        css_koodi = f"""
-        <style>
-        .stApp {{
-            background-image: url("data:image/jpg;base64,{koodattu_kuva}");
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }}
-        
-        /* Tehdään sovelluksen sisällön taustasta hieman läpinäkyvä, jotta teksti erottuu */
-        .block-container {{
-            background-color: rgba(255, 255, 255, 0.85);
-            padding: 2rem;
-            border-radius: 10px;
-            margin-top: 2rem;
-        }}
-        </style>
-        """
-        st.markdown(css_koodi, unsafe_allow_html=True)
-    except FileNotFoundError:
-        st.warning("Taustakuvaa 'taustaa.jpg' ei löytynyt. Varmista, että se on samassa kansiossa koodin kanssa.")
+    ammatti = st.text_input("Ammatti tai sosiaalinen asema", placeholder="esim. Torppari, seppä, piika...")
+    
+    # Nappi, joka lähettää lomakkeen
+    submit = st.form_submit_button("Luo tarina ja aikajana")
 
-# Kutsutaan funktiota
-aseta_taustakuva("taustaa.png")
-
-st.markdown(
-    """
-    <div style='text-align: center; background-color: #2c3e50; padding: 15px; margin-bottom: 20px; border-radius: 5px;'>
-        <a href='https://www.sukulehti.fi' target='_blank' style='color: #f1c40f; text-decoration: none; font-weight: bold; font-size: 1.2rem;'>SUKU -lehti | www.sukulehti.fi</a>
-    </div>
-    """, 
-    unsafe_allow_html=True
-)
-
-st.title("Herätä esivanhempasi eloon")
-st.write("Liitä alle Geni-profiilin linkki, niin tekoäly luo faktojen pohjalta elävän historiallisen tarinan.")
-
-# 2. Käyttöliittymän syöttökenttä
-geni_url = st.text_input("Geni-URL (esim. https://www.geni.com/people/Nimi/123456789)")
-
-# 3. Logiikka, kun nappia painetaan
-if st.button("Luo tarina"):
-    if "geni.com/people/" not in geni_url:
-        st.error("Tarkista, että syötit kelvollisen Geni-linkin.")
+# 3. Logiikka tarinan luontiin
+if submit:
+    # Tarkistetaan, että ainakin vuodet ja ammatit on täytetty (nimi voi periaatteessa puuttua)
+    if not syntymavuosi or not kuolinvuosi or not ammatti:
+        st.warning("Täytäthän ainakin syntymävuoden, kuolinvuoden ja ammatin!")
     else:
-        with st.spinner("Haetaan tietoja ja kirjoitetaan tarinaa... Tässä voi kestää hetki."):
+        # Haetaan OpenAI-avain salaisuuksista
+        try:
+            openai_key = st.secrets["OPENAI_API_KEY"]
+        except KeyError:
+            st.error("OpenAI API-avain puuttuu Streamlitin asetuksista (Secrets).")
+            st.stop()
+            
+        # Rakennetaan tekoälyn asiantuntijakehote
+        prompt = f"""
+        LÄHTÖTIEDOT:
+        Nimi: {nimi if nimi else "Tuntematon"}
+        Elinaika: {syntymavuosi} ({syntymapaikka}) - {kuolinvuosi} ({kuolinpaikka})
+        Ammatti: {ammatti}
+        
+        OHJEET:
+        Olet asiantunteva Suomen historian tutkija ja pedagogi. Tehtäväsi on luoda syötettyjen tietojen pohjalta opettavainen ja elävä katsaus henkilön elämään.
+
+        OSA 1: TARINA (3-4 kappaletta)
+        Kirjoita mukaansatempaava tarina henkilön elämästä.
+        - Sido henkilön arki tiukasti hänen ammattinsa todellisuuteen tuona aikakautena.
+        - Analysoi asuinpaikkakuntien (syntymä- ja kuolinpaikka) merkitystä: millainen ympäristö ja elinkeino siellä vallitsi?
+        - Kytke hänen elinvuotensa Suomen historian suuriin linjoihin (esim. nälkävuodet, isoviha, Suomen sota, teollistuminen, sortokaudet).
+        
+        OSA 2: VISUAALINEN AIKAJANA
+        Luo tarinan loppuun otsikko "### ⏳ Elämänpolku ja historian käänteet".
+        Rakenna sen alle visuaalisesti selkeä aikajana ranskalaisilla viivoilla. 
+        Käytä aikajanalla emoji-kuvakkeita ja lihavoituja vuosilukuja.
+        Aseta samalle aikajanalle lomittain henkilön kuviteltuja elämänvaiheita (syntymä, aikuistuminen, muutto/kuolema) ja täsmälleen samaan aikaan oikeasti tapahtuneita valtakunnallisia tai paikallisia historiallisia tapahtumia.
+        """
+        
+        # Kutsutaan OpenAI:ta
+        with st.spinner("Tekoäly selaa historiankirjoja ja rakentaa aikajanaa... Tässä menee hetki."):
             try:
-                # Erotetaan Geni ID linkistä
-                geni_id = geni_url.split("/")[-1]
-                
-                # Haetaan API-avaimet Streamlitin salaisuuksista (Secrets)
-                geni_token = st.secrets["GENI_ACCESS_TOKEN"]
-                openai_key = st.secrets["OPENAI_API_KEY"]
-
-                # ==========================================
-             # ==========================================
-               # ==========================================
-                # VAIHE A: Haetaan tiedot Genistä
-                # ==========================================
-                
-                puhdas_url = geni_url.split("?")[0]
-                raaka_id = puhdas_url.split("/")[-1]
-                
-                # KORJAUS: Genin pitkät GUID-tunnukset vaativat eteen 'profile-g'
-                if raaka_id.isdigit() and len(raaka_id) > 10:
-                    geni_id = f"profile-g{raaka_id}"
-                elif not raaka_id.startswith("profile-"):
-                    geni_id = f"profile-{raaka_id}"
-                else:
-                    geni_id = raaka_id
-                
-                headers = {"Authorization": f"Bearer {geni_token}", "Accept": "application/json"}
-                api_url = f"https://www.geni.com/api/{geni_id}"
-                
-                response = requests.get(api_url, headers=headers)
-                
-                if response.status_code != 200:
-                    st.error(f"Geni-tietojen haku epäonnistui (Virhekoodi: {response.status_code}).")
-                    st.stop()
-                    
-                profile = response.json()
-                
-                # TARKISTUS: Jos Geni palautti tyhjää ("results": [])
-                if "results" in profile and len(profile["results"]) == 0:
-                    st.error("Geni palautti tyhjän tiedoston.")
-                    st.warning("Tämä tarkoittaa yleensä sitä, että profiili on Genissä yksityinen (Private), eikä ohjelmointirajapinnalla ole siihen lukuoikeutta. Kokeile hakea jotain varmasti julkista (Public) esivanhempaa 1800-luvulta!")
-                    st.stop()
-                
-                # TARKISTUS: Onko kyseessä varmasti yksityinen profiili?
-                if profile.get("is_private") == True and "name" not in profile:
-                    st.error("Tämä on yksityinen profiili (Private). Geni ei salli yksityisten tietojen lukemista ulkoisiin sovelluksiin.")
-                    st.stop()
-                
-                # Poimitaan faktat
-                nimi = profile.get("name", "Tuntematon")
-                
-                birth_data = profile.get("birth", {})
-                birth_date = birth_data.get("date", {}).get("formatted_date", "?")
-                birth_place = birth_data.get("location", {}).get("place_name", "")
-                syntyma = f"{birth_date} {birth_place}".strip()
-                
-                death_data = profile.get("death", {})
-                death_date = death_data.get("date", {}).get("formatted_date", "?")
-                death_place = death_data.get("location", {}).get("place_name", "")
-                kuolema = f"{death_date} {death_place}".strip()
-                
-                ammatti = profile.get("occupation", "Tuntematon asema")
-                asuinpaikat = profile.get("location", {}).get("place_name", "?")
-                perhe = "Puoliso ja lapset (jos kirjattu Geniin)."
-
-                # ==========================================
-                # NÄYTETÄÄN HAETUT FAKTAT RUUDULLA
-                # ==========================================
-                st.info("💡 **Geni-rajapinnan onnistuneesti löytämät faktat:**")
-                st.write(f"**Nimi:** {nimi}")
-                st.write(f"**Elinaika:** {syntyma} - {kuolema}")
-                st.write(f"**Ammatti:** {ammatti}")
-                st.write(f"**Paikkakunnat:** {asuinpaikat}")
-                st.markdown("---")
-# ==========================================
-                # NÄYTETÄÄN HAETUT FAKTAT RUUDULLA
-                # ==========================================
-                st.info("💡 **Tekoälylle lähetettävät faktat:**")
-                st.write(f"**Nimi:** {nimi}")
-                st.write(f"**Elinaika:** {syntyma} - {kuolema}")
-                st.write(f"**Ammatti:** {ammatti}")
-                st.write(f"**Paikkakunnat:** {asuinpaikat}")
-                st.markdown("---")
-                # ==========================================
-                # VAIHE B: Rakennetaan kehotus (Prompt)
-                # ==========================================
-               # ==========================================
-                # VAIHE B: Rakennetaan kehotus (Prompt)
-                # ==========================================
-                prompt = f"""
-ROOLI:
-Olet asiantunteva Suomen historian tutkija ja kokenut sukututkija. Tehtäväsi on muuttaa kuivat sukututkimusfaktat eläväksi tarinaksi.
-
-LÄHTÖTIEDOT (Syötteet):
-Nimi: {nimi}
-Elinaika: {syntyma} - {kuolema}
-Ammatti / Sosiaalinen asema: {ammatti}
-Tärkeimmät asuinpaikat: {asuinpaikat}
-Perhe: {perhe}
-
-OHJEET TARINAN KIRJOITTAMISEEN:
-0. PÄÄHENKILÖ (KRIITTINEN SÄÄNTÖ): Tarinan on ehdottomasti keskityttävä henkilöön nimeltä {nimi}. Sido hänen nimensä, elämänvaiheensa ja ammattinsa kiinteästi osaksi jokaista kappaletta. Älä kirjoita yleistä historian oppituntia, vaan kuvaa nimenomaan {nimi}-nimisen ihmisen mahdollista arkea tässä historiallisessa viitekehyksessä.
-1. Paikallinen konteksti: Analysoi annetut asuinpaikat ja sijoita tarina oikeaan Suomen historialliseen maakuntaan. Kuvaile, miten alueen luonto ja kulttuuri vaikuttivat suoraan hänen ({nimi}) elämäänsä.
-2. Ammatti ja arki: Jos ammatti on tiedossa, kerro konkreettisesti, mitä hän teki työkseen. Jos ammattia ei ole, kuvaa tyypillistä tuon ajan maalais- tai kaupunkilaisarkea hänen asuinseudullaan.
-3. Aikakausi: Suhteuta hänen elinvuotensa Suomen historian suuriin käännekohtiin (esim. nälkävuodet, sodat) ja pohdi, miten ne ehkä koskettivat hänen perhettään.
-4. Tyyli: Kirjoita rikasta, empaattista ja elävää suomea. Älä keksi hänelle valheellisia tekoja, vaan käytä ilmaisuja kuten "{nimi} on saattanut nähdä..." tai "Hänen päiviinsä kuului todennäköisesti...".
-5. Muista: Suomi oli osa Ruotsia vuoteen 1809 ja autonominen osa Venäjää vuosina 1809-1917.
-6. Konteksti: Yritä päätellä henkilön etunimestä kyseisen nimen taustaa ja kirjoita siitä lyhyesti.
-7. Käytä hyödyksi Wikipediaa, jotta voit sitoa henkilön tarinan hänen elinaikaansa
-8. Älä koskaan oleta henkilön varallisuutta tai luonteenpiirteitä. Jos ammattia ei ole mainittu, kuvaa ainoastaan alueen yleisiä elinkeinoja.
-
-"""
-
-                # ==========================================
-                # VAIHE C: Lähetetään tekoälylle (OpenAI)
-                # ==========================================
-                openai_url = "https://api.openai.com/v1/chat/completions"
-                openai_headers = {
+                headers = {
                     "Content-Type": "application/json",
                     "Authorization": f"Bearer {openai_key}"
                 }
-                openai_payload = {
+                payload = {
                     "model": "gpt-4o",
                     "messages": [
-                        {"role": "system", "content": "Olet suomalainen historioitsija."},
+                        {"role": "system", "content": "Olet suomalainen historian ja sukututkimuksen asiantuntija."},
                         {"role": "user", "content": prompt}
                     ],
-                    "temperature": 0.4
+                    "temperature": 0.5 # Hieman matalampi lämpötila pitää historiallisen faktan tarkempana
                 }
                 
-                ai_response = requests.post(openai_url, headers=openai_headers, json=openai_payload)
-                if ai_response.status_code != 200:
-                    st.error(f"Tekoälyn rajapinta palautti virheen: {ai_response.text}")
-                    st.stop()
+                response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    tulos = data["choices"][0]["message"]["content"]
                     
-                ai_data = ai_response.json()
-                tarina = ai_data["choices"][0]["message"]["content"]
-                
-                # ==========================================
-                # VAIHE D: Näytetään valmis tarina
-                # ==========================================
-                st.success("Tarinan luonti onnistui!")
-                st.markdown("### Tarina:")
-                st.write(tarina)
-                
+                    st.success("Valmista!")
+                    st.markdown("---")
+                    st.markdown(tulos)
+                else:
+                    st.error(f"Virhe OpenAI-yhteydessä: {response.text}")
+                    
             except Exception as e:
                 st.error(f"Sovelluksessa tapahtui odottamaton virhe: {e}")
